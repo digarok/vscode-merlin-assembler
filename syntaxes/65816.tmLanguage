@@ -39,7 +39,7 @@
 			<key>comment</key>
 			<string>Value</string>
 			<key>match</key>
-			<string>[\#?[>|^|$|%]|$|\\][a-zA-Z0-9_:\\]*</string>
+			<string>[\#?[>|^|$|%]|$|\\][a-zA-Z0-9_\-+/*:\\]*</string>
 			<key>name</key>
 			<string>constant.numeric.asm</string>
 		</dict>
@@ -63,7 +63,7 @@
 			<key>comment</key>
 			<string>Label Reference</string>
 			<key>match</key>
-			<string>\b(BCC|BLT|BCS|BGE|BEQ|BIT|BMI|BNE|BPL|BRA|BRK|BRL|BVC|BVS|JMP|JML|JSR|JSL|bcc|blt|bcs|bge|beq|bit|bmi|bne|bpl|bra|brk|brl|bvc|bvs|jmp|jml|jsr|jsl)\b[\s]+([:a-zA-Z0-9_]+)</string>
+			<string>\b(BCC|BLT|BCS|BGE|BEQ|BIT|BMI|BNE|BPL|BRA|BRK|BRL|BVC|BVS|JMP|JML|JSR|JSL|bcc|blt|bcs|bge|beq|bit|bmi|bne|bpl|bra|brk|brl|bvc|bvs|jmp|jml|jsr|jsl)\b[\s]+([a-zA-Z0-9_:\]]+)</string>
 			<key>captures</key>
 			<dict>
 				<key>1</key>
@@ -82,7 +82,7 @@
 			<key>comment</key>
 			<string>Label Reference</string>
 			<key>match</key>
-			<string>\b(HEX|DFB|DB|DDB|DA|DW|ADR|ADRL|DS|ASC|DCI|INV|FLS|REV|STR|STRL|hex|dfb|db|ddb|da|dw|adr|adrl|ds|asc|dci|inv|fls|rev|str|strl)\b[\s]+([#$:a-zA-Z0-9_]+)</string>
+			<string>\b(HEX|DFB|DB|DDB|DA|DW|ADR|ADRL|DS|ASC|DCI|INV|FLS|REV|STR|STRL|hex|dfb|db|ddb|da|dw|adr|adrl|ds|asc|dci|inv|fls|rev|str|strl)\b[\s]+([#$a-zA-Z0-9_:+*/\-\],]+)</string>
 			<key>captures</key>
 			<dict>
 				<key>1</key>
@@ -101,7 +101,7 @@
 			<key>comment</key>
 			<string>Label Reference</string>
 			<key>match</key>
-			<string>\b(ADC|ADCL|AND|ANDL|ASL|CMP|CMPL|CPX|CPY|DEC|DEX|DEY|EOR|INC|INX|INY|LDA|LDAL|LDX|LDY|LSR|ORA|ROL|ROR|SBC|STA|STAL|STX|STY|STZ|adc|adcl|and|andl|asl|cmp|cmpl|cpx|cpy|dec|dex|dey|eor|inc|inx|iny|lda|ldal|ldx|ldy|lsr|ora|rol|ror|sbc|sta|stal|stx|sty|stz)\b[\s]+([:a-zA-Z0-9_]+)</string>
+			<string>\b(ADC|ADCL|AND|ANDL|ASL|CMP|CMPL|CPX|CPY|DEC|DEX|DEY|EOR|INC|INX|INY|LDA|LDAL|LDX|LDY|LSR|ORA|ROL|ROR|SBC|STA|STAL|STX|STY|STZ|adc|adcl|and|andl|asl|cmp|cmpl|cpx|cpy|dec|dex|dey|eor|inc|inx|iny|lda|ldal|ldx|ldy|lsr|ora|rol|ror|sbc|sta|stal|stx|sty|stz)\b[\s]+([a-zA-Z0-9_:\]]+)</string>
 			<key>captures</key>
 			<dict>
 				<key>1</key>
@@ -147,7 +147,7 @@
 			<key>comment</key>
 			<string>Label</string>
 			<key>match</key>
-			<string>^([:a-zA-Z0-9_]+)\s</string>
+			<string>^([a-zA-Z0-9_:\]]+)\s</string>
 			<key>name</key>
 			<string>string.label</string>
 		</dict>
