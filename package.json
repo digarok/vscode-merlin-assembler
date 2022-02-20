@@ -1,14 +1,20 @@
 {
-    "name": "s",
+    "name": "vscode-merlin-assembler",
     "displayName": "Merlin32 Assembly Language (65816/6502)",
     "description": "65816 Assembly Language Support for VSCode",
     "version": "0.0.1",
+    "homepage": "https://github.com/digarok/vscode-merlin-assembler",
     "engines": {
         "vscode": "^1.64.0"
     },
     "categories": [
         "Programming Languages"
     ],
+    "keywords": ["short", "relevant", "keywords", "for", "searching"],
+    "license": "GPL-3.0",
+    "publisher": "dagenbrock",
+    "repository": "git@github.com:digarok/vscode-merlin-assembler.git",
+    "icon": "images/merlin-ico.png",
     "contributes": {
         "languages": [{
             "id": "asm",
