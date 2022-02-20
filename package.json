@@ -1,0 +1,25 @@
+{
+    "name": "s",
+    "displayName": "Merlin32 Assembly Language (65816/6502)",
+    "description": "65816 Assembly Language Support for VSCode",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.64.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "asm",
+            "aliases": ["65xx Assembly", "asm"],
+            "extensions": [".s",".asm",".l"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "asm",
+            "scopeName": "source.asm.65816",
+            "path": "./syntaxes/65816.tmLanguage"
+        }]
+    }
+}
