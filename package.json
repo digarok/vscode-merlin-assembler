@@ -15,6 +15,7 @@
     "publisher": "dagenbrock",
     "repository": "git@github.com:digarok/vscode-merlin-assembler.git",
     "icon": "images/merlin-ico.png",
+	"main": "./extension.js",
     "contributes": {
         "languages": [{
             "id": "asm",
