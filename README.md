@@ -20,6 +20,18 @@ Doesn't recognize "force Absolute" syntax like ` lda: ]var`.
 
 ## Release Notes
 
+### 0.1.0 
+- go to declaration (only works in current document)
+- find all references (only works in current document)
+- show symbols (only works in current document, press @ in search bar to show them)
+- hover over mnemonics shows some information about it (hover over an "LDA" for example)
+- format document
+- format selection
+- added configuration settings for format functions
+- small highlight fixes: `lda #<LOC`, logical operators [!, &, .], `asc 'blah'`,
+- began adding highlighting for Merlin directives (org, mx, dsk, put, putbin, etxc.) 
+
+
 ### 0.0.2
 
 Recognize computed variables like `#this+that-2/20`
@@ -40,3 +52,5 @@ If you'd like to contribute, here are tips on getting started:
 - make changes to the `syntaxes/65816.tmLanguage` file and save
 - hit F5 to open an extension host running the highlighter to test your changes on some real source code
 - commit, push, PR
+
+Publishing notes at https://code.visualstudio.com/api/working-with-extensions/publishing-extension
