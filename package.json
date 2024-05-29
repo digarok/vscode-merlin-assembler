@@ -15,6 +15,7 @@
     "publisher": "dagenbrock",
     "repository": "git@github.com:digarok/vscode-merlin-assembler.git",
     "icon": "images/merlin-ico.png",
+	"main": "./extension.js",
     "contributes": {
         "languages": [{
             "id": "asm",
@@ -26,6 +27,39 @@
             "language": "asm",
             "scopeName": "source.asm.65816",
             "path": "./syntaxes/65816.tmLanguage"
-        }]
+        }],
+		"configuration": [
+			{
+				"id": "anotherCategory",
+				"order": 1,
+				"properties": {
+					"conf.merlin32.format.offsets.command": {
+						"type": "integer",
+                        "order": 1,
+                        "default": 30,
+                        "minimum": 0,
+                        "scope": "window",
+                        "description": "When you use \"format document\" or \"format selection\" these settings will be used.\n\nNumber of characters in front of command."
+
+					},
+					"conf.merlin32.format.offsets.operand": {
+						"type": "integer",
+                        "order": 2,
+                        "default": 34,
+                        "minimum": 0,
+                        "scope": "window",
+						"description": "Number of characters in front of operand."
+					},
+					"conf.merlin32.format.offsets.comment": {
+						"type": "integer",
+                        "order": 3,
+                        "default": 60,
+                        "minimum": 0,
+                        "scope": "window",
+						"description": "Number of characters in front of comment."
+					}
+				}
+			}
+        ]
     }
 }
