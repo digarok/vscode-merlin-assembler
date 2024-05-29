@@ -4,18 +4,7 @@ This provides syntax highlighting for Assembly Language written in the Merlin8/1
 
 ## Installation
 
-You should be able to install from the VS Marketplace.  
-
-Otherwise follow standard instructions to download and install this file in VSCode. 
-
-
-## 
-## Known Issues
-
-Doesn't recognize macros.
-
-Doesn't recognize "force Absolute" syntax like ` lda: ]var`.
-
+Install extension from the VS Marketplace.  
 
 
 ## Release Notes
@@ -34,13 +23,15 @@ Doesn't recognize "force Absolute" syntax like ` lda: ]var`.
 
 ### 0.0.2
 
-Recognize computed variables like `#this+that-2/20`
-Add variable support ` lda ]foo`
-Improved data literal capture ` dw 2,4,6,]foo,1+1`
+- Recognize computed variables like `#this+that-2/20`
+- Add variable support ` lda ]foo`
+- Improved data literal capture ` dw 2,4,6,]foo,1+1`
 
 ### 0.0.1
 
-Initial release of the extension.
+- Initial release of the extension.
+
+
 -----------------------------------------------------------------------------------------------------------
 
 
