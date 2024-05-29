@@ -39,7 +39,7 @@
 			<key>comment</key>
 			<string>Value</string>
 			<key>match</key>
-			<string>[\#?[>|^|$|%]|$|\\][a-zA-Z0-9_\-+/*:\\]*</string>
+			<string>[\#?[<|>|^|$|%]|$|\\][a-zA-Z0-9_\-+/*:\\]*</string>
 			<key>name</key>
 			<string>constant.numeric.asm</string>
 		</dict>
@@ -55,9 +55,17 @@
 			<key>comment</key>
 			<string>String</string>
 			<key>match</key>
-			<string>'[^'']*'</string>
+			<string>'[^']*'</string>
 			<key>name</key>
 			<string>string.quoted.single</string>
+		</dict>
+		<dict>
+			<key>comment</key>
+			<string>String</string>
+			<key>match</key>
+			<string>\b(org|dsk|sav|lnk|typ|rel|dum|dend|chk|dat|err|asm|sna|aux|ent|ext|xpl|ali|knd|bsz|mac|eom|put|putbin|use|mx|ORG|DSK|SAV|LNK|TYP|REL|DUM|DEND|CHK|DAT|ERR|ASM|SNA|AUX|ENT|EXT|XPL|ALI|KND|BSZ|MAC|EOM|PUT|PUTBIN|USE|MX)\b</string>
+			<key>name</key>
+			<string>entity.name.function.preprocessor</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -82,7 +90,7 @@
 			<key>comment</key>
 			<string>Label Reference</string>
 			<key>match</key>
-			<string>\b(HEX|DFB|DB|DDB|DA|DW|ADR|ADRL|DS|ASC|DCI|INV|FLS|REV|STR|STRL|hex|dfb|db|ddb|da|dw|adr|adrl|ds|asc|dci|inv|fls|rev|str|strl)\b[\s]+([#$a-zA-Z0-9_:+*/\-\],]+)</string>
+			<string>\b(HEX|DFB|DB|DDB|DA|DW|ADR|ADRL|DS|ASC|DCI|INV|FLS|REV|STR|STRL|hex|dfb|db|ddb|da|dw|adr|adrl|ds|asc|dci|inv|fls|rev|str|strl)\b[\s]+([#$a-zA-Z0-9_:+*/"'\-\]\.!\&,]+)</string>
 			<key>captures</key>
 			<dict>
 				<key>1</key>
