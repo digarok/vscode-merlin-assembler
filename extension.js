@@ -3402,6 +3402,7 @@ vscode.languages.registerHoverProvider('asm', {
         }
 
         var hint = '';
+        var spc = '&nbsp;&nbsp;&nbsp;&nbsp;'
         if (asmlookups[word]) {
 
             //title
@@ -3411,7 +3412,13 @@ vscode.languages.registerHoverProvider('asm', {
             hint += "\n" + asmlookups[word].flags;
 
             //adressing modes table
-            hint += "\n" + '|Assembler Example|HEX|Addressing Mode|Bytes      |Cycles   |';
+            hint += "\n" 
+                + '|Assembler Example ' + spc 
+                + '|HEX' + spc 
+                + '|Addressing Mode ' + spc
+                + '|Bytes ' + spc 
+                + '|Cycles ' + spc 
+                + '|';
             hint += "\n" + '|:----------------|:-:|:--------------|:----------|:--------|';
             var x;
             if (asmlookups[word].modes) {
@@ -3428,7 +3435,7 @@ vscode.languages.registerHoverProvider('asm', {
             //footnotes
             if (asmlookups[word].footnotes.length > 0) {
                 hint += "\n" + '<br/>';
-                hint += "\n" + '*NOTES*<br/>';
+                hint += "\n" + '### *NOTES*<br/>';
                 var fn;
                 for (var i in asmlookups[word].footnotes) {
                     fn = asmlookups[word].footnotes[i];

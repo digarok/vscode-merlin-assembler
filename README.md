@@ -4,7 +4,7 @@ This provides syntax highlighting for Assembly Language written in the Merlin8/1
 
 ## Installation
 
-Install extension from the VS Marketplace.  
+Install extension from the [VS Marketplace](https://marketplace.visualstudio.com/items?itemName=dagenbrock.vscode-merlin-assembler).
 
 
 ## Release Notes
@@ -18,7 +18,7 @@ Install extension from the VS Marketplace.
 - format selection
 - added configuration settings for format functions
 - small highlight fixes: `lda #<LOC`, logical operators [!, &, .], `asc 'blah'`,
-- began adding highlighting for Merlin directives (org, mx, dsk, put, putbin, etxc.) 
+- began adding highlighting for Merlin directives (org, mx, dsk, put, putbin, etc.) 
 
 
 ### 0.0.2
