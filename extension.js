@@ -3392,6 +3392,10 @@ var aliases = {
     'stal': 'sta'
 };
 
+var linkcommands = [
+    'asm', 'dsk', 'put', 'putbin', 'sav', 'use'
+];
+
 vscode.languages.registerHoverProvider('asm', {
     provideHover(document, position, token) {
         var range = document.getWordRangeAtPosition(position);
@@ -3412,12 +3416,12 @@ vscode.languages.registerHoverProvider('asm', {
             hint += "\n" + asmlookups[word].flags;
 
             //adressing modes table
-            hint += "\n" 
-                + '|Assembler Example ' + spc 
-                + '|HEX' + spc 
+            hint += "\n"
+                + '|Assembler Example ' + spc
+                + '|HEX' + spc
                 + '|Addressing Mode ' + spc
-                + '|Bytes ' + spc 
-                + '|Cycles ' + spc 
+                + '|Bytes ' + spc
+                + '|Cycles ' + spc
                 + '|';
             hint += "\n" + '|:----------------|:-:|:--------------|:----------|:--------|';
             var x;
@@ -3506,6 +3510,111 @@ vscode.languages.registerDocumentSymbolProvider('asm', {
     }
 });
 
+vscode.languages.registerDocumentLinkProvider('asm', {
+    provideDocumentLinks(document, token) {
+
+        if (document.uri.scheme !== 'file') {
+            return null;
+        }
+
+        var res = [];
+        for (var i = 0; i < document.lineCount; i++) {
+            var line = document.lineAt(i);
+
+            var splitted = splitAsmLine(line);
+
+            if (splitted === null) {
+                continue;
+            }
+
+            if (linkcommands.includes(splitted.parts[1]) && splitted.parts[2] !== '') {
+                var dir = document.uri.path.substring(0, document.uri.path.lastIndexOf('/') + 1);
+
+                var uri = vscode.Uri.file(dir + splitted.parts[2]);
+                res.push(new vscode.DocumentLink(
+                    new vscode.Range(
+                        new vscode.Position(i, splitted.startpos[2]),
+                        new vscode.Position(i, splitted.startpos[2] + splitted.parts[2].length)
+                    ),
+                    uri
+                ));
+            }
+        }
+        return res;
+    }
+});
+
+vscode.languages.registerRenameProvider('asm', {
+    provideRenameEdits(document, position, newName, token) {
+
+        var range = document.getWordRangeAtPosition(position);
+        var word = document.getText(range);
+
+        var references = getAllLabelReferences(document, true);
+
+        if (references[word]) {
+            var edits = new vscode.WorkspaceEdit();
+            for (var i in references[word]) {
+                var r = references[word][i];
+                edits.replace(document.uri, r, newName);
+            }
+            return edits;
+        }
+
+        return null;
+    }
+});
+
+/* append a space if the string does not end with one */
+var checkAppendSpace = function (str) {
+    if (str.substring(str.length - 1, str.length) !== ' ') {
+        str += ' ';
+    }
+    return str;
+}
+
+/* returns array with [label, command, operand, comment] or null if empty line or comment line */
+var splitAsmLine = function (line) {
+
+    if (line.text.trim() === '' || line.text[0] === '*' || line.text[0] === ';') {
+        //empty line or comment, ignore
+        return null;
+    }
+
+    var parts = ['', '', '', '']; //0=label, 1=cmd, 2=operand, 3=comment
+    var startpos = [-1, -1, -1, -1];
+    var w = 0;
+    var in_word = null;
+    for (var i = 0; i < line.text.length; i++) {
+
+        c = line.text[i];
+
+        if (w >= 3) {
+            parts[w] += c;
+            continue;
+        }
+
+        if (c == ' ' || c == "\t") {
+            if (in_word !== false) {
+                in_word = false;
+                w++;
+            }
+        } else {
+            if (in_word !== true) {
+                if (c === ';') {
+                    //comments are always the 4th column
+                    w = 3;
+                }
+                in_word = true;
+                startpos[w] = i;
+            }
+            parts[w] += c;
+        }
+    }
+
+    return { "parts": parts, "startpos": startpos };
+}
+
 var getAllLabelDefinitions = function (document) {
 
     var labels = {};
@@ -3546,20 +3655,32 @@ var getAllLabelReferences = function (document, includedef) {
 
         for (var i = 0; i < document.lineCount; i++) {
             var line = document.lineAt(i);
-            var c = line.text.substring(0, 1);
-            if (line.text === '' || c === '*' || c === ';') {
+            var splitted = splitAsmLine(line);
+            if (splitted === null) {
                 continue;
             }
 
-            var lastindex = 1;
+            if (splitted.parts[1] === label) {
+                //the label is the command (which means it's a macro)
+                var position = new vscode.Position(i, splitted.startpos[1]);
+                var range = document.getWordRangeAtPosition(position);
+                refs.push(range);
+            }
+
+            var lastindex = 0;
             var pos;
             while (true) {
-                pos = line.text.indexOf(label, lastindex);
+                pos = splitted.parts[2].indexOf(label, lastindex);
                 if (pos === -1) break;
 
                 lastindex = pos + label.length;
 
-                var position = new vscode.Position(i, pos);
+                if (line.text[splitted.startpos[2] + pos - 1] === '$') {
+                    //edge case: when the label is "a" and there is a dfb $a make sure it doesn't count as a reference
+                    continue;
+                }
+
+                var position = new vscode.Position(i, splitted.startpos[2] + pos);
                 var range = document.getWordRangeAtPosition(position);
                 var word = document.getText(range);
                 if (word === label) {
@@ -3581,52 +3702,32 @@ vscode.languages.registerDocumentRangeFormattingEditProvider('asm', {
         var from = range.start.line;
         var to = range.end.line;
         var res = [];
-        var cfg = []; //30, 34, 60];
+        var cfg = [];
+
         cfg.push(vscode.workspace.getConfiguration().get('conf.merlin32.format.offsets.command'));
         cfg.push(vscode.workspace.getConfiguration().get('conf.merlin32.format.offsets.operand'));
         cfg.push(vscode.workspace.getConfiguration().get('conf.merlin32.format.offsets.comment'));
+
         for (var i = from; i <= to; i++) {
             var line = document.lineAt(i);
-            if (line.text.substring(0, 1) == ';' || line.text.substring(0, 1) == '*' || line.text.length == 0) {
-                //leave comments and empty lines
-                continue;
-            }
 
-            var r = new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, line.text.length));
             var newt = '';
-            var c;
-            var w = 0;
-            var in_word = null;
-            for (var j = 0; j < line.text.length; j++) {
-                c = line.text[j];
-                if (w >= cfg.length) {
-                    newt += c;
-                    continue;
-                }
+            var splitted = splitAsmLine(line);
 
-                if (c == ' ' || c == "\t") {
-                    in_word = false;
-                } else {
-                    if (in_word === false) {
-                        if (c === ';') {
-                            //comments are always the 4th column
-                            w = cfg.length - 1;
-                        }
-
-                        //next char of new word, add padding if configured
-                        newt = newt.padEnd(cfg[w], ' ');
-                        if (newt.substring(newt.length - 1) != ' ') {
-                            //append space if padding did not add any
-                            newt += ' ';
-                        }
-                        w++;
-                    }
-                    newt += c;
-                    in_word = true;
+            if (splitted === null) {
+                //trim trailing spaces on comment/empty lines
+                newt = line.text.trimEnd();
+            } else {
+                for (var j in cfg) {
+                    newt += splitted.parts[j];
+                    newt = checkAppendSpace(newt.padEnd(cfg[j], ' '));
                 }
+                newt += splitted.parts[3];
+                newt = newt.trimEnd();
             }
 
             if (newt != line.text) {
+                var r = new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, line.text.length));
                 res.push(new vscode.TextEdit(r, newt));
             }
         }
