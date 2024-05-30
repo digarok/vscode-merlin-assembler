@@ -3527,7 +3527,8 @@ vscode.languages.registerDocumentLinkProvider('asm', {
                 continue;
             }
 
-            if (linkcommands.includes(splitted.parts[1]) && splitted.parts[2] !== '') {
+            var lowercmd = splitted.parts[1].toLowerCase();
+            if (linkcommands.includes(lowercmd) && splitted.parts[2] !== '') {
                 var dir = document.uri.path.substring(0, document.uri.path.lastIndexOf('/') + 1);
 
                 var uri = vscode.Uri.file(dir + splitted.parts[2]);
