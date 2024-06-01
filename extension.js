@@ -3597,7 +3597,7 @@ var splitAsmLine = function (line) {
 
         c = line.text[i];
 
-        if (w >= 3) {
+        if (w >= 3 && in_word == true) {
             parts[w] += c;
             continue;
         }
