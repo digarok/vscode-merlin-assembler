@@ -6,6 +6,7 @@ This provides syntax highlighting for Assembly Language written in the Merlin8/1
 
 Install extension from the [VS Marketplace](https://marketplace.visualstudio.com/items?itemName=dagenbrock.vscode-merlin-assembler).
 
+Excellent Merlin32 documentation and the assembler downloads are available at https://brutaldeluxe.fr/products/crossdevtools/merlin/, thanks to Brutal Deluxe!
 
 ## Release Notes
 ###  0.1.2
@@ -14,6 +15,7 @@ Install extension from the [VS Marketplace](https://marketplace.visualstudio.com
 - hover over mnemonics now shows supporting processors (6502/65C02/65816)
 - bug fix: references in comments are now excluded
 - bug fix: symbols like "a" where wrongly found in a value like $a
+- bug fix: matching whitespace into comments
 
 ###  0.1.1 
 - minor rendering change to hover
