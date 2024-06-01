@@ -8,8 +8,17 @@ Install extension from the [VS Marketplace](https://marketplace.visualstudio.com
 
 
 ## Release Notes
+###  0.1.2
+- added rename symbol functionality
+- added document link functionality for Merlin commands ASM, DSK, PUT, PUTBIN, SAV, USE
+- hover over mnemonics now shows supporting processors (6502/65C02/65816)
+- bug fix: references in comments are now excluded
+- bug fix: symbols like "a" where wrongly found in a value like $a
 
-### 0.1.0 
+###  0.1.1 
+- minor rendering change to hover
+
+### 0.1.0
 - go to declaration (only works in current document)
 - find all references (only works in current document)
 - show symbols (only works in current document, press @ in search bar to show them)

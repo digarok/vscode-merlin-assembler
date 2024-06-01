@@ -2,7 +2,7 @@
     "name": "vscode-merlin-assembler",
     "displayName": "Merlin32 Assembly Language (65816/6502)",
     "description": "65816 Assembly Language Support for VSCode",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "homepage": "https://github.com/digarok/vscode-merlin-assembler",
     "activationEvents": [],
     "engines": {
@@ -37,7 +37,7 @@
 					"conf.merlin32.format.offsets.command": {
 						"type": "integer",
                         "order": 1,
-                        "default": 30,
+                        "default": 24,
                         "minimum": 0,
                         "scope": "window",
                         "description": "When you use \"format document\" or \"format selection\" these settings will be used.\n\nNumber of characters in front of command."
@@ -46,7 +46,7 @@
 					"conf.merlin32.format.offsets.operand": {
 						"type": "integer",
                         "order": 2,
-                        "default": 34,
+                        "default": 28,
                         "minimum": 0,
                         "scope": "window",
 						"description": "Number of characters in front of operand."
@@ -54,7 +54,7 @@
 					"conf.merlin32.format.offsets.comment": {
 						"type": "integer",
                         "order": 3,
-                        "default": 60,
+                        "default": 52,
                         "minimum": 0,
                         "scope": "window",
 						"description": "Number of characters in front of comment."
