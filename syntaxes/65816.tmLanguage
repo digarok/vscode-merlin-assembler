@@ -23,9 +23,15 @@
 			<key>comment</key>
 			<string>Comment</string>
 			<key>match</key>
-			<string>[\s][;](.)*</string>
-			<key>name</key>
-			<string>comment.line</string>
+			<string>\s+([;].*)</string>
+			<key>captures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>comment.block</string>
+				</dict>
+			</dict>
 		</dict>
 		<dict>
 			<key>comment</key>
