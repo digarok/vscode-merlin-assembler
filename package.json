@@ -21,7 +21,10 @@
     ],
     "license": "GPL-3.0",
     "publisher": "dagenbrock",
-    "repository": "git@github.com:digarok/vscode-merlin-assembler.git",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/digarok/vscode-merlin-assembler.git"
+    },
     "icon": "images/merlin-ico.png",
     "main": "./extension.js",
     "contributes": {
