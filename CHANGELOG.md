@@ -2,6 +2,9 @@
 
 All notable changes to the Merlin32 extension will be documented in this file.
 
+###  0.2.1
+
+- Fix for "go to declaration" for standalone files
 
 ###  0.2.0
 

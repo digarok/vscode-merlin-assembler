@@ -3772,12 +3772,13 @@ var getDirname = function (str) {
 }
 
 var testAndAddFileRelation = function (document, splitted) {
-    if (includecommands.includes(splitted.parts[1].toLowerCase())) {
 
-        var u = document.uri.toString();
-        if (!fileRelations[u]) {
-            fileRelations[u] = [u];
-        }
+    var u = document.uri.toString();
+    if (!fileRelations[u]) {
+        fileRelations[u] = [u];
+    }
+
+    if (includecommands.includes(splitted.parts[1].toLowerCase())) {
 
         var u2 = vscode.Uri.joinPath(document.uri, '../' + splitted.parts[2]).toString();
         var u3 = vscode.Uri.joinPath(document.uri, '../' + splitted.parts[2] + '.s').toString();
