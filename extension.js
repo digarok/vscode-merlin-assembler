@@ -3541,22 +3541,13 @@ var searchLocalLabels = function (document, position, onlydef, includedef) {
     var label = charbeforeword + document.getText(range);
     var i = position.line;
     var founddef = false;
-    var lr = [];
-    var all_lr = [];
 
     while (i >= 0 && i < document.lineCount) {
         var splitted = splitAsmLine(document.lineAt(i));
 
-        if (splitted !== null) {
-            if (!onlydef) {
-                lr = findLabelReferenceInSplitted(document, i, splitted, label, includedef);
-                all_lr = all_lr.concat(lr);
-            }
-
-            if (splitted.parts[0] === label) {
-                founddef = true;
-                break;
-            }
+        if (splitted !== null && splitted.parts[0] === label) {
+            founddef = true;
+            break;
         }
 
         if (searchUp) {
@@ -3572,6 +3563,31 @@ var searchLocalLabels = function (document, position, onlydef, includedef) {
 
     if (founddef && onlydef) {
         return new vscode.Location(document.uri, new vscode.Position(i, 0));
+    }
+
+    //search from definition onwards
+    var lr = [];
+    var all_lr = [];
+    var j = i;
+    while (j >= 0 && j < document.lineCount) {
+        var splitted = splitAsmLine(document.lineAt(j));
+
+        if (splitted !== null) {
+            if (splitted.parts[0] === label && j !== i) {
+                //exit when label was reused
+                break;
+            }
+
+            lr = findLabelReferenceInSplitted(document, j, splitted, label, includedef);
+            all_lr = all_lr.concat(lr);
+
+        }
+
+        if (searchUp) {
+            j++;
+        } else {
+            j--;
+        }
     }
 
     return all_lr;
@@ -4112,8 +4128,10 @@ var getLabelReferences = function (mydocument, label, includedef) {
 
                 //gather all label references of all files that our file has relations to
                 var refs = [];
+                var filesadded = [];
                 for (var i in fileRelations) {
-                    if (fileRelations[i].includes(u)) {
+                    if (fileRelations[i].includes(u) && !filesadded.includes(u)) {
+                        filesadded.push(u);
                         for (var j in fileRelations[i]) {
                             var df = fileRelations[i][j];
                             if (labelReferences[df]) {
