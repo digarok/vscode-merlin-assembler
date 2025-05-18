@@ -3402,10 +3402,53 @@ const includecommands = [
 
 const findfilesglob = '**\/*.{s,asm,l}';
 
+var regexHex = new RegExp('^[0-9a-f]+$');
+var regexBin = new RegExp('^[0-1]+$');
+var regexDec = new RegExp('^[0-9]+$');
+var charsbeforedecimal = ' <=>#+-*/&.!,';
+
+var convertNumberForHover = function (num) {
+    var hint = '';
+    var hex = num.toString(16).toUpperCase();
+    var bin = num.toString(2);
+    var bin_a = new Array();
+
+    hex = hex.padStart(Math.ceil(hex.length / 2) * 2, '0');
+    bin = bin.padStart(Math.ceil(bin.length / 8) * 8, '0');
+
+    for (var i = 0; i < bin.length; i += 8) {
+        bin_a.push(bin.substr(i, 8));
+    }
+
+    hint += '| | |';
+    hint += "\n" + '|:----------------|----:|';
+    hint += "\n|Dec|" + '\`\`\`' + num + '\`\`\`|';
+    hint += "\n|Hex|" + '\`\`\`' + hex + '\`\`\`|';
+    hint += "\n|Bin|" + '\`\`\`' + bin_a.join('_') + '\`\`\`|';
+    return hint;
+}
+
+var getCharBeforeWord = function (document, position) {
+    var charbeforeword = ' ';
+
+    var range = document.getWordRangeAtPosition(position);
+    if (range.start.character > 0) {
+        var range2 = new vscode.Range(
+            new vscode.Position(range.start.line, range.start.character - 1),
+            new vscode.Position(range.start.line, range.start.character)
+        );
+        charbeforeword = document.getText(range2).toLowerCase();
+    }
+
+    return charbeforeword;
+}
+
 vscode.languages.registerHoverProvider('asm', {
     provideHover(document, position, token) {
         var range = document.getWordRangeAtPosition(position);
-        var word = document.getText(range).toLocaleLowerCase();
+        var word = document.getText(range).toLowerCase();
+        var charbeforeword = getCharBeforeWord(document, position);
+        var splitted = splitAsmLine(document.lineAt(position.line));
 
         if (aliases[word]) {
             word = aliases[word];
@@ -3461,6 +3504,12 @@ vscode.languages.registerHoverProvider('asm', {
                     }
                 }
             }
+        } else if ((splitted !== null && splitted.parts[1].toLowerCase() === 'hex' || charbeforeword === '$') && regexHex.test(word)) {
+            hint = convertNumberForHover(parseInt(word, 16));
+        } else if (charsbeforedecimal.indexOf(charbeforeword) !== -1 && regexDec.test(word)) {
+            hint = convertNumberForHover(parseInt(word));
+        } else if (charbeforeword === '%' && regexBin.test(word)) {
+            hint = convertNumberForHover(parseInt(word, 2));
         }
 
         const markdown = new vscode.MarkdownString(`${hint}`, true);
@@ -3471,8 +3520,70 @@ vscode.languages.registerHoverProvider('asm', {
     }
 });
 
+/**
+ * This will return:
+ * a) null if the position in the document does not point to a local label
+ * b) vscode.Location when onlydef=true
+ * c) an array of document|ranges when onlydef = false
+ */
+var searchLocalLabels = function (document, position, onlydef, includedef) {
+
+    var charbeforeword = getCharBeforeWord(document, position);
+    if (charbeforeword === ']') {
+        searchUp = true;
+    } else if (charbeforeword === ':') {
+        searchUp = false;
+    } else {
+        return null;
+    }
+
+    var range = document.getWordRangeAtPosition(position);
+    var label = charbeforeword + document.getText(range);
+    var i = position.line;
+    var founddef = false;
+    var lr = [];
+    var all_lr = [];
+
+    while (i >= 0 && i < document.lineCount) {
+        var splitted = splitAsmLine(document.lineAt(i));
+
+        if (splitted !== null) {
+            if (!onlydef) {
+                lr = findLabelReferenceInSplitted(document, i, splitted, label, includedef);
+                all_lr = all_lr.concat(lr);
+            }
+
+            if (splitted.parts[0] === label) {
+                founddef = true;
+                break;
+            }
+        }
+
+        if (searchUp) {
+            i--;
+        } else {
+            i++;
+        }
+    }
+
+    if (!founddef) {
+        return null;
+    }
+
+    if (founddef && onlydef) {
+        return new vscode.Location(document.uri, new vscode.Position(i, 0));
+    }
+
+    return all_lr;
+}
+
 vscode.languages.registerDeclarationProvider('asm', {
     provideDeclaration(document, position, token) {
+
+        var localLabelLocation = searchLocalLabels(document, position, true, false);
+        if (localLabelLocation !== null) {
+            return localLabelLocation;
+        }
 
         return new Promise(function (myResolve, myReject) {
             getAllLabelDefinitionsForDocument(document).then(function (labels) {
@@ -3494,6 +3605,17 @@ vscode.languages.registerDeclarationProvider('asm', {
 
 vscode.languages.registerReferenceProvider('asm', {
     provideReferences(document, position, context, token) {
+
+        var locallabels = searchLocalLabels(document, position, false, true);
+        if (locallabels !== null) {
+            var res = [];
+            for (var i in locallabels) {
+                res.push(
+                    new vscode.Location(locallabels[i].document.uri, locallabels[i].range.start)
+                );
+            }
+            return res;
+        }
 
         return new Promise(function (myResolve, myReject) {
             var range = document.getWordRangeAtPosition(position);
@@ -3538,12 +3660,12 @@ vscode.languages.registerDocumentSymbolProvider('asm', {
 
 vscode.languages.registerWorkspaceSymbolProvider({
     provideWorkspaceSymbols(query, token) {
-        return new Promise(function(myResolve, myReject) {
+        return new Promise(function (myResolve, myReject) {
             getAllLabelDefinitionsForWorkspace().then(function (workspaceLabels) {
 
                 var res = [];
-                for(var u in workspaceLabels) {
-                    for(var label in workspaceLabels[u]) {
+                for (var u in workspaceLabels) {
+                    for (var label in workspaceLabels[u]) {
                         if (query === '' || label.toLowerCase().includes(query.toLowerCase())) {
                             res.push(
                                 new vscode.SymbolInformation(
@@ -3570,7 +3692,7 @@ vscode.languages.registerDocumentLinkProvider('asm', {
             return null;
         }
 
-        return new Promise(function (myResolve, myReject) {//???
+        return new Promise(function (myResolve, myReject) {
 
             vscode.workspace.findFiles(findfilesglob).then((uris) => {
                 allUris = uris;
@@ -3783,11 +3905,11 @@ var testAndAddFileRelation = function (document, splitted) {
         var u2 = vscode.Uri.joinPath(document.uri, '../' + splitted.parts[2]).toString();
         var u3 = vscode.Uri.joinPath(document.uri, '../' + splitted.parts[2] + '.s').toString();
         var ua;
-        for(var i in allUris) {
+        for (var i in allUris) {
             ua = allUris[i].toString();
-            if(ua === u2) {
+            if (ua === u2) {
                 fileRelations[u].push(u2);
-            } else if(ua === u3) {
+            } else if (ua === u3) {
                 fileRelations[u].push(u3);
             }
         }
@@ -3825,61 +3947,78 @@ var parseForReferences = function (document, label, includedef) {
     var u = document.uri.toString();
 
     for (var i = 0; i < document.lineCount; i++) {
-        var line = document.lineAt(i);
-        var splitted = splitAsmLine(line);
+        var splitted = splitAsmLine(document.lineAt(i));
         if (splitted === null) {
             continue;
         }
 
         testAndAddFileRelation(document, splitted);
 
-        if (includedef && splitted.parts[0] === label) {
-            //found location of the label itself
-
-            var r = new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, label.length));
-
+        var lr = findLabelReferenceInSplitted(document, i, splitted, label, includedef);
+        for (var j in lr) {
             if (!labelReferences[u]) {
                 labelReferences[u] = [];
             }
-            labelReferences[u].push({ 'range': r, 'document': document });
+            labelReferences[u].push(lr[j]);
+        }
+    }
+}
+
+var findLabelReferenceInSplitted = function (document, i, splitted, label, includedef) {
+    var lr = [];
+
+    if (includedef && splitted.parts[0] === label) {
+        //found location of the label itself
+
+        var r = new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, label.length));
+
+        lr.push({ 'range': r, 'document': document });
+    }
+
+    if (splitted.parts[1] === label) {
+        //the label is the command (which means it's a macro)
+
+        var position = new vscode.Position(i, splitted.startpos[1]);
+        var r = new vscode.Range(new vscode.Position(i, splitted.startpos[1]), new vscode.Position(i, splitted.startpos[1] + label.length));
+
+        lr.push({ 'range': r, 'document': document });
+    }
+
+    var lastindex = 0;
+    var pos;
+    while (true) {
+        pos = splitted.parts[2].indexOf(label, lastindex);
+        if (pos === -1) break;
+
+        lastindex = pos + label.length;
+
+        if (document.lineAt(i).text[splitted.startpos[2] + pos - 1] === '$') {
+            //edge case: when the label is "a" and there is a dfb $a make sure it doesn't count as a reference
+            continue;
         }
 
-        if (splitted.parts[1] === label) {
-            //the label is the command (which means it's a macro)
+        var position = new vscode.Position(i, splitted.startpos[2] + pos);
 
-            var position = new vscode.Position(i, splitted.startpos[1]);
-            var r = document.getWordRangeAtPosition(position);
-
-            if (!labelReferences[u]) {
-                labelReferences[u] = [];
+        if (label.substr(0, 1) === ':' || label.substr(0, 1) === ']') {
+            //local labels
+            var word = document.getText(
+                document.getWordRangeAtPosition(new vscode.Position(position.line, position.character + 1))
+            );
+            if (word === label.substr(1)) {
+                var r = new vscode.Range(new vscode.Position(i, position.character), new vscode.Position(i, position.character + label.length));
+                lr.push({ 'range': r, 'document': document });
             }
-            labelReferences[u].push({ 'range': r, 'document': document });
-        }
-
-        var lastindex = 0;
-        var pos;
-        while (true) {
-            pos = splitted.parts[2].indexOf(label, lastindex);
-            if (pos === -1) break;
-
-            lastindex = pos + label.length;
-
-            if (line.text[splitted.startpos[2] + pos - 1] === '$') {
-                //edge case: when the label is "a" and there is a dfb $a make sure it doesn't count as a reference
-                continue;
-            }
-
-            var position = new vscode.Position(i, splitted.startpos[2] + pos);
+        } else {
+            //regular labels
             var r = document.getWordRangeAtPosition(position);
             var word = document.getText(r);
             if (word === label) {
-                if (!labelReferences[u]) {
-                    labelReferences[u] = [];
-                }
-                labelReferences[u].push({ 'range': r, 'document': document });
+                lr.push({ 'range': r, 'document': document });
             }
         }
     }
+
+    return lr;
 }
 
 /* Analyze all files in workspace, but leave only what is related to our document */
