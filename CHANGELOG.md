@@ -2,6 +2,11 @@
 
 All notable changes to the Merlin32 extension will be documented in this file.
 
+###  0.3.1
+- hover over decimal, hexadecimal or binary numbers shows the number in all three formats
+- local labels are now supported
+- Fix for "rename symbol"
+
 ###  0.2.1
 
 - Fix for "go to declaration" for standalone files
