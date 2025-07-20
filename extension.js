@@ -3936,23 +3936,30 @@ var testAndAddFileRelation = function (document, splitted) {
     }
 }
 
-var poolRelationsRecursive = function(u, res)
-{
-    if(fileRelations[u]) {
-        for(var i in fileRelations[u]) {
+var poolRelationsRecursive = function (u, res, forcelinked) {
+    if (fileRelations[u]) {
+        for (var i in fileRelations[u]) {
             var df = fileRelations[u][i].uri;
             //if(df === u) continue;
 
             found = false;
-            for(var k in res) {
-                if(res[k].uri === df) {
+            for (var k in res) {
+                if (res[k].uri === df) {
                     found = true;
                     break;
                 }
             }
-            if(!found) {
-                res.push(fileRelations[u][i]);
-                poolRelationsRecursive(df, res);
+            if (!found) {
+                var obj = { uri: fileRelations[u][i].uri, linked: fileRelations[u][i].linked };
+                if (forcelinked) {
+                    obj.linked = true;
+                }
+                res.push(obj);
+                if (fileRelations[u][i].linked) {
+                    //once we encounter a linked relation, all further deeper connections are linked, too
+                    forcelinked = true;
+                }
+                poolRelationsRecursive(df, res, forcelinked);
             }
         }
     }
@@ -3960,11 +3967,10 @@ var poolRelationsRecursive = function(u, res)
     return res;
 }
 
-var poolRelations = function()
-{
+var poolRelations = function () {
     filepools = {};
-    for(var u in fileRelations) {
-        filepools[u] = poolRelationsRecursive(u, []);
+    for (var u in fileRelations) {
+        filepools[u] = poolRelationsRecursive(u, [], false);
     }
 }
 
