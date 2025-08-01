@@ -3940,7 +3940,6 @@ var poolRelationsRecursive = function (u, res, forcelinked) {
     if (fileRelations[u]) {
         for (var i in fileRelations[u]) {
             var df = fileRelations[u][i].uri;
-            //if(df === u) continue;
 
             found = false;
             for (var k in res) {
