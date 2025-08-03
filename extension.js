@@ -2811,7 +2811,7 @@ const asmlookups = {
                 "cycles": "7<sup>1<\/sup>"
             },
             {
-                "mode": "dpX",
+                "mode": "dp,X",
                 "hex": "95",
                 "info": "DP Indexed,X",
                 "c1": true,
@@ -4148,8 +4148,9 @@ var getAllLabelDefinitionsForWorkspace = function () {
                 //filter out ext labels
                 var filteredWorkspaceLabels = {};
                 for (var u in workspaceLabels) {
+                    filteredWorkspaceLabels[u] = {};
                     for (var label in workspaceLabels[u]) {
-                        if (!workspaceLabels[u]['isext']) {
+                        if (!workspaceLabels[u][label]['isext']) {
                             filteredWorkspaceLabels[u][label] = workspaceLabels[u][label];
                         }
                     }
