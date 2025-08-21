@@ -2,6 +2,9 @@
 
 All notable changes to the Merlin32 extension will be documented in this file.
 
+###  0.3.2
+- small fixes -  pei correctly matches operand, strings fixed, adds stal/ldal in more places
+
 ###  0.3.1
 - hover over decimal, hexadecimal or binary numbers shows the number in all three formats
 - local labels are now supported
