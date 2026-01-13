@@ -2,6 +2,9 @@
 
 All notable changes to the Merlin32 extension will be documented in this file.
 
+###  0.4.0
+- labels that are included via ENT/EXT are now resolved across files
+
 ###  0.3.2
 - small fixes -  pei correctly matches operand, strings fixed, adds stal/ldal in more places
 

@@ -2811,7 +2811,7 @@ const asmlookups = {
                 "cycles": "7<sup>1<\/sup>"
             },
             {
-                "mode": "dpX",
+                "mode": "dp,X",
                 "hex": "95",
                 "info": "DP Indexed,X",
                 "c1": true,
@@ -3397,7 +3397,7 @@ const linkcommands = [
 ];
 
 const includecommands = [
-    'put'
+    'asm', 'put'
 ];
 
 const findfilesglob = '**\/*.{s,asm,l}';
@@ -3787,7 +3787,8 @@ vscode.languages.registerRenameProvider('asm', {
 
 var allUris = [];
 var fileRelations = {}; //[uri] => [uri1, uri12, uri13, ...] lists of files that have a relationship with each other
-var workspaceLabels = {}; //[uri][labelname] => {'range': vscode.Range, 'document': vscode.TextDocument}
+var filepools = {};
+var workspaceLabels = {}; //[uri][labelname] => {'range': vscode.Range, 'document': vscode.TextDocument, 'isext': true|false, 'isent': true|false}
 var labelReferences = {}; //[uri] => [{},...]
 
 /* append a space if the string does not end with one */
@@ -3913,7 +3914,7 @@ var testAndAddFileRelation = function (document, splitted) {
 
     var u = document.uri.toString();
     if (!fileRelations[u]) {
-        fileRelations[u] = [u];
+        fileRelations[u] = [{ 'uri': u, 'linked': false }];
     }
 
     if (includecommands.includes(splitted.parts[1].toLowerCase())) {
@@ -3921,18 +3922,58 @@ var testAndAddFileRelation = function (document, splitted) {
         var u2 = vscode.Uri.joinPath(document.uri, '../' + splitted.parts[2]).toString();
         var u3 = vscode.Uri.joinPath(document.uri, '../' + splitted.parts[2] + '.s').toString();
         var ua;
+        var linked = (splitted.parts[1].toLowerCase() === 'asm');
         for (var i in allUris) {
             ua = allUris[i].toString();
-            if (ua === u2) {
-                fileRelations[u].push(u2);
-            } else if (ua === u3) {
-                fileRelations[u].push(u3);
+            if (ua === u2 || ua === u3) {
+                fileRelations[u].push({ 'uri': ua, 'linked': linked });
+                if (!fileRelations[ua]) {
+                    fileRelations[ua] = [];
+                }
+                fileRelations[ua].push({ 'uri': u, 'linked': linked });
             }
         }
     }
 }
 
-/* parse an assembly file, find all labels, build up fileRelation lists */
+var poolRelationsRecursive = function (u, res, forcelinked) {
+    if (fileRelations[u]) {
+        for (var i in fileRelations[u]) {
+            var df = fileRelations[u][i].uri;
+
+            found = false;
+            for (var k in res) {
+                if (res[k].uri === df) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                var obj = { uri: fileRelations[u][i].uri, linked: fileRelations[u][i].linked };
+                if (forcelinked) {
+                    obj.linked = true;
+                }
+                res.push(obj);
+                if (fileRelations[u][i].linked) {
+                    //once we encounter a linked relation, all further deeper connections are linked, too
+                    forcelinked = true;
+                }
+                poolRelationsRecursive(df, res, forcelinked);
+            }
+        }
+    }
+
+    return res;
+}
+
+var poolRelations = function () {
+    filepools = {};
+    for (var u in fileRelations) {
+        filepools[u] = poolRelationsRecursive(u, [], false);
+    }
+}
+
+/* parse an assembly file, find all labels, build up fileRelation list */
 var parseAssemblyDocument = function (document) {
 
     var u = document.uri.toString();
@@ -3948,11 +3989,13 @@ var parseAssemblyDocument = function (document) {
 
         if (splitted.parts[0].length > 0) {
             label = splitted.parts[0];
+            var isext = (splitted.parts[1].toLowerCase() === 'ext');
+            var isent = (splitted.parts[1].toLowerCase() === 'ent');
             var r = new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, label.length));
             if (!workspaceLabels[u]) {
                 workspaceLabels[u] = {};
             }
-            workspaceLabels[u][label] = { 'range': r, 'document': document };
+            workspaceLabels[u][label] = { 'range': r, 'document': document, 'isext': isext, 'isent': isent };
         }
     }
 }
@@ -3967,8 +4010,6 @@ var parseForReferences = function (document, label, includedef) {
         if (splitted === null) {
             continue;
         }
-
-        testAndAddFileRelation(document, splitted);
 
         var lr = findLabelReferenceInSplitted(document, i, splitted, label, includedef);
         for (var j in lr) {
@@ -4059,18 +4100,23 @@ var getAllLabelDefinitionsForDocument = function (mydocument) {
                     parseAssemblyDocument(doc);
                 });
 
+                poolRelations();
+
                 //gather all labels of all files that our file has relations to
                 var labels = {};
-                for (var i in fileRelations) {
-                    if (fileRelations[i].includes(u)) {
-                        for (var j in fileRelations[i]) {
-                            var df = fileRelations[i][j];
-                            if (workspaceLabels[df]) {
-                                for (var label in workspaceLabels[df]) {
-                                    labels[label] = workspaceLabels[df][label];
-                                };
+                for (var i in filepools[u]) {
+                    var df = filepools[u][i].uri;
+                    if (workspaceLabels[df]) {
+                        for (var label in workspaceLabels[df]) {
+                            if (!workspaceLabels[df][label]['isext']
+                                &&
+                                (u === df || typeof labels[label] === 'undefined')
+                            ) {
+                                //only definitions of labels, not external references
+                                //and only if we don't have it yet or it is "our" file
+                                labels[label] = workspaceLabels[df][label];
                             }
-                        }
+                        };
                     }
                 }
 
@@ -4099,7 +4145,18 @@ var getAllLabelDefinitionsForWorkspace = function () {
                     parseAssemblyDocument(doc);
                 });
 
-                myResolve(workspaceLabels);
+                //filter out ext labels
+                var filteredWorkspaceLabels = {};
+                for (var u in workspaceLabels) {
+                    filteredWorkspaceLabels[u] = {};
+                    for (var label in workspaceLabels[u]) {
+                        if (!workspaceLabels[u][label]['isext']) {
+                            filteredWorkspaceLabels[u][label] = workspaceLabels[u][label];
+                        }
+                    }
+                }
+
+                myResolve(filteredWorkspaceLabels);
             });
         });
     });
@@ -4114,6 +4171,7 @@ var getLabelReferences = function (mydocument, label, includedef) {
 
         labelReferences = {};
         fileRelations = {};
+        workspaceLabels = {};
 
         //all assembler and macro files in workspace
         vscode.workspace.findFiles(findfilesglob).then((uris) => {
@@ -4123,20 +4181,43 @@ var getLabelReferences = function (mydocument, label, includedef) {
             });
             Promise.all(proms).then((docs) => {
                 docs.forEach((doc) => {
+                    parseAssemblyDocument(doc);
                     parseForReferences(doc, label, includedef);
                 });
 
+                poolRelations();
+
+                //find the definition of our label
+                var includeRefsFromLinked = false;
+                for (var i in filepools[u]) {
+
+                    if (!filepools[u][i].linked) {
+                        var df = filepools[u][i].uri;
+                        if (typeof workspaceLabels[df] !== 'undefined'
+                            && typeof workspaceLabels[df][label] !== 'undefined'
+                            && (workspaceLabels[df][label].isext || workspaceLabels[df][label].isent)
+                        ) {
+                            //this means that our label is defined in another ASM linked
+                            //file, so we have to also include all label references
+                            //from files that are linked via ASM
+                            includeRefsFromLinked = true;
+                            break;
+                        }
+                    }
+                }
+
                 //gather all label references of all files that our file has relations to
                 var refs = [];
-                var filesadded = [];
-                for (var i in fileRelations) {
-                    if (fileRelations[i].includes(u) && !filesadded.includes(u)) {
-                        filesadded.push(u);
-                        for (var j in fileRelations[i]) {
-                            var df = fileRelations[i][j];
-                            if (labelReferences[df]) {
-                                refs = refs.concat(labelReferences[df]);
-                            }
+                for (var i in filepools[u]) {
+                    var df = filepools[u][i].uri;
+
+                    if (labelReferences[df]) {
+                        if (!filepools[u][i].linked) {
+                            //"put": include all references
+                            refs = refs.concat(labelReferences[df]);
+                        } else if (includeRefsFromLinked) {
+                            //"asm": include only EXT/ENT labels
+                            refs = refs.concat(labelReferences[df]);
                         }
                     }
                 }
